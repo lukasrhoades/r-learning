@@ -1,0 +1,154 @@
+---
+title: "r4ds-ch2"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-05-04"
+---
+
+# Ch 2 Workflow: basics
+
+## 2.1 Coding basics
+
+Can use R to do basic math
+```{r}
+1 / 200 * 30
+(59 + 73 + 2) / 3
+sin(pi / 2)
+```
+
+Create new objects with assignment operator
+```{r}
+x <- 3 * 4
+x
+```
+
+Combine multiple elements into a vector with c()
+```{r}
+primes <- c(2, 3, 5, 7, 11, 13)
+```
+
+Basic arithmetic on vectors is applied to every element
+```{r}
+primes * 2
+primes - 1
+```
+
+All assignment statements have same form
+```{r}
+#object_name <- value
+```
+Shortcut for assignment operator is Option + - (minus sign)
+
+## 2.2 Comments
+
+```{r}
+# Create vector of primes
+primes <- c(2, 3, 5, 7, 11, 13)
+
+# Multiply primes by 2
+primes * 2
+```
+
+Use comments to explain why, not the how or what
+The how or what can be reconstructed from code itself, but not the why
+Use comments to explain plan of attack and record important insights
+
+## 2.3 What's in a name?
+
+Posit recommends using snake_case to name objects
+```{r}
+#i_use_snake_case
+#otherPeopleUseCamelCase
+#some.people.use.periods
+#And_aFew.People_RENOUNCEconvention
+```
+
+Inspect an object by typing its name
+```{r}
+x
+```
+
+Make another assignment
+```{r}
+this_is_a_really_long_name <- 2.5
+```
+Can use tab to autocomplete long names
+Can type "this" and hit cmd up arrow in console to list commands that start with those letters
+
+Make another assignment
+```{r}
+r_rocks <- 2^3
+```
+
+Try to inspect it
+```{r}
+#r_rock
+#R_rocks
+```
+Must be completely precise in instructions, case sensitive and no typos
+
+## 2.4 Calling functions
+
+Built-in functions are called like this
+```{r}
+#function_name(argument1 = value1, argument2 = value2, ...)
+```
+
+Try using seq()
+```{r}
+seq(from = 1, to = 10)
+```
+
+Often omit the names of first several arguments in function calls
+```{r}
+seq(1, 10)
+```
+
+R provides assistance pairing quotation marks
+```{r}
+x <- "hello world"
+```
+
+If mismatch, R will show the continuation character "+"
+```{r}
+#x <- "hello
+```
+Add the missing pair or press escape to try again
+
+## 2.5 Exercises
+
+1. Why does this code not work?
+```{r}
+my_variable <- 10
+# my_var1able
+```
+There is a typo when trying to inspect the variable, so the object is not found
+You have to type "my_variable" with an "i" instead of a "1" or R will try to look for a variable called "my_var1able" which was not created
+
+2. Tweak each of the following R commands so they run correctly
+```{r}
+library(tidyverse)  # From libary and todyverse
+
+ggplot(
+  data = mpg,  # From dTA
+  mapping = aes(x = displ, y = hwy)  # Add comma between arguments
+) +  # From maping
+  geom_point() +  # Moved aesthetics used in geom_smooth to ggplot call
+  geom_smooth(method = "lm")  # Closed quotation marks
+```
+
+3. Press Option + Shift + K, what happens? 
+Get keyboard shortcut quick reference page
+To get same page from menus, click help on the menubar and it is right under cheat sheets
+
+4. Revisit an exercise from 1.6, run the following lines of code
+```{r}
+my_bar_plot <- ggplot(mpg, aes(x = class)) +
+  geom_bar()
+my_scatter_plot <- ggplot(mpg, aes(x = cty, y = hwy)) +
+  geom_point()
+ggsave(filename = "mpg-plot.png", plot = my_bar_plot)
+```
+Which of the two plots is saved and why?
+The bar plot is saved because while ggsave() by default uses the last created plot, you can specify which plot to save with the plot parameter
