@@ -1,0 +1,1076 @@
+---
+title: "r4ds-ch3"
+output: pdf_document
+date: "2025-05-04"
+---
+
+# Ch 3 Data transformation
+
+# 3.1 Introduction
+
+### 3.1.1 Prerequisites
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+```
+dplyr overwrites some base R functions, so when want to use them have to use their full names e.g. stats::filter()
+When need to be precise, use packagename::functionname()
+
+### 3.1.2 nycflights13
+
+nycflights13::flights contains 336,776 flights that departed from NYC in 2013
+```{r}
+flights
+```
+
+flights is a tibble, a special type of data frame used by the tidyverse
+Most important difference is how they print, tibbles are designed for large datasets so they only show the first few rows and columns that can fit on the screen
+In RStudio you can use View(flights) for an interactive view of all the data
+You can also do print(flights, width = Inf) to show all columns
+```{r}
+glimpse(flights)  # Or use glimpse()
+```
+Variable names are followed by abbreviations for the type of variable: integers, doubles (real numbers), character (strings), dttm for date-time
+
+### 3.1.3 dplyr basics
+
+What dplyr verbs (functions) have in common
+1. First argument is always a data frame
+2. Subsequent arguments describe which columns to operate on using the variable names (without quotes)
+3. Output is always a new data frame
+
+Combine multiple verbs with the pipe |>
+Pipe takes thing on its left and passes it to function on its right
+x |> f(y) is equivalent to f(x, y) 
+x |> f(y) |> g(z) is equivalent to g(f(x, y), z)
+Pronounce the pipe as "then"
+
+```{r}
+flights |>
+  filter(dest == "IAH") |>
+  group_by(year, month, day) |>
+  summarize(
+    arr_delay = mean(arr_delay, na.rm = TRUE)
+  )
+```
+The code above groups flights whose destination is IAH and displays the mean arrival delay for each day
+
+dplyr verbs are organized into 4 groups based on what they operate on:
+rows, columns, groups, or tables
+
+## 3.2 Rows
+
+Most important for rows are
+1. filter() which changes which rows are present without changing their order
+2. arrange() which changes the order of rows without changing which are present
+
+### 3.2.1 filter()
+
+Allows you to keep rows based on values of columns
+First argument is data frame, the next are conditions that must be true for the row to be kept
+
+Find all flights that departed more than 2 hours late
+```{r}
+flights |>
+  filter(dep_delay > 120)
+```
+
+Can combine conditions with & or , to indicate "and" and | to indicate "or"
+```{r}
+# Flights that departed on Jan 1
+flights |>
+  filter(month == 1 & day == 1)
+
+# Flights that departed in Jan or Feb
+flights |>
+  filter(month == 1 | month == 2)
+```
+
+Useful shortcut to combine | and == which is %in%
+```{r}
+flights |>
+  filter(month %in% c(1, 2))
+```
+
+Filter() creates a new data frame then prints it, doesn't modify original
+dplyr functions never modify their inputs
+To save the result, do so with the assignment operator
+```{r}
+jan1 <- flights |>
+  filter(month == 1 & day == 1)
+```
+
+### 3.2.2 Common mistakes
+
+Using = instead of == to test for equality, filter() lets you know when this happens
+```{r}
+#flights |>
+  #filter(month = 1)
+```
+
+Another mistake is to write "or" statements like you would in English
+```{r}
+flights |>
+  filter(month == 1 | 2)
+```
+No error, but first checks condition month == 1 and then 2, 2 is always true so this doesn't filter anything
+
+### 3.2.3 arrange()
+
+Changes order of rows based on value of the columns
+Takes a data frame and set of column names to order by
+If provide more than 1 column, each successive column is used to break ties
+
+Sort by departure time, earliest years first, then within a year the earliest months, etc.
+```{r}
+flights |>
+  arrange(year, month, day, dep_time)
+```
+
+Can use desc() on a column inside of arrange() to re-order data frame based on that column in descending order
+
+This orders flights from most to least delayed
+```{r}
+flights |>
+  arrange(desc(dep_delay))
+```
+Number of rows doesn't change, not filtering, only re-ordering
+
+### 3.2.4 distinct()
+
+Finds all unique rows in dataset
+Most of time will want distinct combo of some variables, so can also optionally supply column names
+
+```{r}
+# Remove duplicate rows if there are any
+flights |>
+  distinct()
+
+# Find all unique origin and destination pairs
+flights |>
+  distinct(origin, dest)
+```
+
+If want to keep all other columns when filtering for unique rows, can use .keep_all = TRUE
+```{r}
+flights |>
+  distinct(origin, dest, .keep_all = TRUE)
+```
+Not coincidence all from Jan 1, distinct() finds first occurrence of row in dataset and discards rest
+
+To find number of occurences, swap distinct() with count()
+With sort = TRUE, arranges them in descending order of number of occurrences
+```{r}
+flights |>
+  count(origin, dest, sort = TRUE)
+```
+
+### 3.2.5 Exercises
+
+1. In a single pipeline for each condition, find all flights that meet the condition:
+
+a) Arrival delay of two or more hours
+```{r}
+flights |>
+  filter(arr_delay >= 120)
+```
+
+b) Flew to Houston (IAH or HOU)
+```{r}
+flights |>
+  filter(dest %in% c("IAH", "HOU"))
+```
+
+c) Were operated by United, American, or Delta
+```{r}
+airlines  # Look up airline codes
+flights |>
+  filter(carrier %in% c("UA", "AA", "DL"))
+```
+
+d) Departed in summer (July, August, and September)
+```{r}
+flights |>
+  filter(month %in% c(7:9))
+```
+
+e) Arrived more than two hours late but didn't leave late
+```{r}
+flights |>
+  filter(dep_delay <= 0 & arr_delay > 120)
+```
+
+f) Were delayed by at least an hour, but made up over 30 min in flight
+```{r}
+flights |>
+  filter(dep_delay >= 60 & (dep_delay - arr_delay) > 30)
+```
+
+2. Sort flights to find the flights with the longest departure delays
+```{r}
+flights |>
+  arrange(desc(dep_delay))
+```
+
+Find the flights that left earliest in the morning
+```{r}
+flights |>
+  arrange(dep_time)
+```
+
+3. Sort flights to find the fastest flights
+```{r}
+# First convert arrival and departure times to minutes
+arrival <- function() {
+  as.integer(substring(str_pad(flights$arr_time, 4, side = "left", pad = 0), 1, 2))*60 + as.integer(substring(str_pad(flights$arr_time, 4, side = "left", pad = 0), 3, 4))
+}
+
+departure <- function() {
+  as.integer(substring(str_pad(flights$dep_time, 4, side = "left", pad = 0), 1, 2))*60 + as.integer(substring(str_pad(flights$dep_time, 4, side = "left", pad = 0), 3, 4))
+}
+
+# Subtract departure from arrival to determine complete flight time
+flight_time <- function() {
+  times <- arrival() - departure()
+  # If negative, then add 1400 (means departed at night and arrived morning)
+  times[times < 0 & !is.na(times)] <- times[times < 0 & !is.na(times)] + 1400
+  times
+}
+
+# Arrange by flight time
+flights |>
+  arrange(flight_time())
+```
+
+4. Was there a flight every day of 2013?
+```{r}
+nrow(distinct(flights, month, day)) == 365
+```
+Yes.
+
+5. Which flights traveled the farthest distance?
+```{r}
+flights |>
+  arrange(desc(distance))
+```
+
+Which traveled the least distance?
+```{r}
+flights |>
+  arrange(distance)
+```
+
+6. Does it matter what order you used filter() and arrange() if you are using both? 
+Yes, in terms of speed/how much work the function has to do because using filter() first reduces the number of rows used in arrange() but using arrange() first means every row has to be sorted, and either way you have to filter through every row
+However, in terms of the result, no
+For example, let's say I take a vector 1:10 and filter only even numbers, so it is 2, 4, 6, etc., then arrange it descending, I would get it 10, 8, 6, etc.
+I filtered through 10 numbers but only had to sort 5 numbers
+If I take the same vector and first arrange it descending it would be 10, 9, 8, etc. and then when I filter out odd numbers I would get 10, 8, 6, etc.
+However, I filtered through 10 numbers and had to sort 10 numbers
+While the result is same, filtering before arranging is faster/more efficient
+
+Let's test this
+```{r}
+df <- data.frame(x = 1:100000000)
+
+filter_first <- function() {
+  df |>
+    filter(x %% 2 == 0) |>
+    arrange(desc(x))
+}
+
+arrange_first <- function() {
+  df |>
+    arrange(desc(x)) |>
+    filter(x %% 2 == 0)
+}
+```
+
+```{r}
+system.time(filter_first())
+```
+
+```{r}
+system.time(arrange_first())
+```
+
+## 3.3 Columns
+
+Four important verbs affect columns without changing rows
+1. mutate() creates new columns derived from existing ones
+2. select() changes which are present
+3. rename() changes names
+4. relocate() changes positions
+
+### 3.3.1 mutate()
+
+Can use to compute gain (how much time delayed flight made up in air) and the speed in mph
+```{r}
+flights |>
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60
+  )
+```
+
+mutate() adds new rows by default on ride side, can use .before to add to left side instead
+```{r}
+flights |>
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60,
+    .before = 1
+  )
+```
+
+. indicates that .before is an argument to the function, not the name of a third variable we are creating
+Can also use .after and in both can use variable name instead of position
+
+For example can add new variables after day column
+```{r}
+flights |>
+  mutate(
+    gain = dep_delay - arr_delay, 
+    speed = distance / air_time * 60,
+    .after = day
+  )
+```
+
+Alternatively can control which variables are kept with .keep, can use "used" argument which specifies to only keep columns involved or created in mutate()
+```{r}
+flights |>
+  mutate(
+    gain = dep_delay - arr_delay, 
+    hours = air_time / 60,
+    gain_per_hour = gain / hours,
+    .keep = "used"
+  )
+```
+
+### 3.2.2 select()
+
+Allows you to zoom in on useful subset of variables based on their names
+
+Select by names
+```{r}
+flights |>
+  select(year, month, day)
+```
+
+Select all columns between year and day (inclusive)
+```{r}
+flights |>
+  select(year:day)
+```
+
+Select all columns except those from year to day (inclusive)
+```{r}
+flights |>
+  select(!year:day)
+```
+Recommend use ! instead of -
+
+Select all columns that are characters
+```{r}
+flights |>
+  select(where(is.character))
+```
+
+Helper functions you can use within select()
+- starts_with("abc") matches names that begin with "abc"
+- ends_with("xyz") matches names that end with "xyz"
+- contains("ijk") matches names that contain "ijk"
+- num_range("x", 1:3) matches x1, x2, and x3
+
+For more details
+```{r}
+?select
+```
+
+Can use matches() with regex
+
+Can rename variables as you select() with =, new name on LHS, old on RHS
+```{r}
+flights |>
+  select(tail_num = tailnum)
+```
+
+### 3.3.3 rename()
+
+If want to keep all existing variables and rename a few, use rename() instead of select()
+
+```{r}
+flights |>
+  rename(tail_num = tailnum)
+```
+
+For automated column name cleaning check out janitor::clean_names()
+
+### 3.3.4 relocate()
+
+By default moves variables to the front
+
+```{r}
+flights |>
+  relocate(time_hour, air_time)
+```
+
+Can also specify where to put them using .before and .after like in mutate()
+```{r}
+flights |>
+  relocate(year:dep_time, .after = time_hour)
+flights|>
+  relocate(starts_with("arr"), .before = dep_time)
+```
+
+### 3.3.5 Exercises
+
+1. Compare dep_time, sched_dep_time, and dep_delay, how would you expect those 3 numbers to be related?
+They are all related to the departure time, specifically:
+dep_delay = dep_time - sched_dep_time
+```{r}
+flights |>
+  select(contains("dep"))
+```
+
+2. Brainstorm as many ways as possible to select dep_time, dep_delay, arr_time, and arr_delay from flights
+```{r}
+flights |>  # Prefix
+  select(starts_with("dep") | starts_with("arr"))
+
+flights |>  # Regex method 1
+  select(matches("\\b[a,d,e,p,r]{3}_[a-z]{4,5}\\b"))
+
+flights |>  # Regex method 2
+  select(matches("\\b(arr|dep)_(time|delay)\\b"))
+```
+
+3. What happens if you specify the name of the same variable multiple times in a select() call?
+It only selects that variable once
+```{r}
+flights |>
+  select(dep_time, dep_time)
+```
+
+4. What does any_of() function do? Why might it be helpful in conjunction with this vector?
+```{r}
+variables <- c("year", "month", "day", "dep_delay", "arr_delay")
+```
+It doesn't check for missing variables, so you can throw in a column that doesn't exist and you won't get an error unlike all_of()
+```{r}
+flights |>
+  select(any_of(variables))
+```
+```{r}
+flights |>
+  select(all_of(variables))
+
+# Add a variable that doesn't exist
+variables <- c("year", "month", "day", "dep_delay", "arr_delay", "seconds")
+
+flights |>
+  # select(all_of(variables))  Error, can't subset elements that don't exist
+  select(any_of(variables))
+```
+
+5. Does result of running following code surprise you? How do select helpers deal with upper and lower case by default and how can you change that?
+```{r}
+flights |> select(contains("TIME"))
+```
+Yes as it selects rows that contain "time"
+This is because select helpers default for ignore.case = TRUE
+You can change that by running the following code
+```{r}
+flights |> select(contains("TIME", ignore.case = FALSE))
+```
+Now it selects nothing!
+
+6. Rename air_time to air_time_main to indicate units of measurement and move it to the beginning of the data frame
+```{r}
+flights |>
+  rename(air_time_main = air_time) |>
+  relocate(air_time_main, .before = 1)
+```
+
+7. Why doesn't the following work, and what does the error mean?
+```{r}
+#flights |>
+  #select(tailnum) |>
+  #arrange(arr_delay)
+```
+Error in arrange(select(flights, tailnum), arr_delay) : 
+Caused by error:
+! object 'arr_delay' not found
+When you only select tailnum, select outputs a copy of the flights data frame with just the tailnum column, which is the input to the arrange function, which now can't find the arr_delay column to sort by
+
+## 3.4 The pipe
+
+Real power comes from combining multiple verbs
+
+Find fastest flights from Houston's IAH airport
+```{r}
+flights |>
+  filter(dest == "IAH") |>
+  mutate(speed = distance / air_time * 60) |>
+  select(year:day, dep_time, carrier, flight, speed) |>
+  arrange(desc(speed))
+```
+Pipe makes this code very easy to read
+
+If we didn't have the pipe... could nest function calls
+```{r}
+arrange(
+  select(
+    mutate(
+      filter(
+        flights,
+        dest == "IAH"
+      ),
+      speed = distance / air_time * 60
+    ), 
+    year:day, dep_time, carrier, flight, speed
+  ),
+  desc(speed)
+)
+```
+
+Or use bunch of intermediate objects (the pandas way)
+```{r}
+flights1 <- filter(flights, dest == "IAH")
+flights2 <- mutate(flights1, speed = distance / air_time * 60)
+flights3 <- select(flights2, year:day, dep_time, carrier, flight, speed)
+arrange(flights3, desc(speed))
+```
+
+Pipe code is easier to write/read
+Shortcut is Cmd + Shift + M
+
+Default is magritrr %>%, part of tidyverse
+```{r}
+mtcars %>% 
+  group_by(cyl) %>% 
+  summarize(n = n())
+```
+For simple cases, behaves identical to base pipe |>, but base pipe is part of base R and is simpler
+
+## 3.5 Groups
+
+So far worked with rows and columns, dplyr even more powerful when work with groups
+
+### 3.5.1 group_by()
+
+Use to divide dataset into groups meaningful for analysis
+```{r}
+flights |>
+  group_by(month)
+```
+Doesn't change data but output shows Groups: month [12], which means subsequent operations will work "by month"
+group_by() adds this class to data frame, which changes behavior of subsequent verbs
+
+### 3.5.2 summarize()
+
+Most important grouped operation is a summary, which if used to calculate one summary statistic reduces each group to one row
+
+Compute average departure delay by month
+```{r}
+flights |> 
+  group_by(month) |> 
+  summarize(
+    avg_delay = mean(dep_delay)
+  )
+```
+Whoops, everything is NA! This is because each month contained missing data for some flights, for now, tell mean() to ignore missing values with na.rm = TRUE
+```{r}
+flights |> 
+  group_by(month) |> 
+  summarize(
+    avg_delay = mean(dep_delay, na.rm = TRUE)
+  )
+```
+
+Can create as many summaries as want in a single call, one very useful is n() which returns number of rows in each group
+```{r}
+flights |> 
+  group_by(month) |> 
+  summarize(
+    avg_delay = mean(dep_delay, na.rm = TRUE),
+    n = n()
+  )
+```
+
+### 3.5.3 The slice_ functions
+
+Five functions allow for extracting specific rows within each group
+1. df |> slice_head(n = 1) takes first row from each group
+2. df |> slice_tail(n = 1) takes last row from each group
+3. df |> slice_min(x, n = 1) takes row with smallest value of column x
+4. df |> slice_max(x, n = 1) takes row with largest value of column x
+5. df |> slice_sample(x, n = 1) takes one random row
+Can vary n for more rows, or use prop = 0.1 to select 10% of rows in each group
+
+Find flights most delayed upon arrival at each destination
+```{r}
+flights |> 
+  group_by(dest) |> 
+  slice_max(arr_delay, n = 1) |> 
+  relocate(dest)
+```
+There are 105 destinations but get 108 rows... Why?
+slice_min() and slice_max() keep tied values, if want exactly one row per group use with_ties = FALSE
+
+This is similar to computing max delay with summarize() but get whole corresponding row instead of single summary statistic
+
+### 3.5.4 Grouping by multiple variables
+
+Can make a group for each date
+```{r}
+daily <- flights |> 
+  group_by(year, month, day)
+daily
+```
+
+When summarize tibbled group each summary peels off last group
+```{r}
+daily_flights <- daily |> 
+  summarize(n = n())
+```
+
+If happy with this behavior can explicitly request it to suppress message
+```{r}
+daily_flights <- daily |> 
+  summarize(
+    n = n(),
+    .groups = "drop_last"
+  )
+```
+Alternatively can use "drop" to drop all grouping or "keep" to preserve groups
+
+### 3.5.5 Ungrouping
+
+Use ungroup() to remove grouping without using summarize()
+```{r}
+daily |> 
+  ungroup()
+```
+
+Now try summarizing an ungrouped data frame
+```{r}
+daily |> 
+  ungroup() |> 
+  summarize(
+    avg_delay = mean(dep_delay, na.rm = TRUE),
+    flights = n()
+  )
+```
+Get one row because dplyr treats all rows in ungrouped data frame as one group
+
+### 3.5.6 .by
+
+Can now also use .by argument to group within a single function
+
+```{r}
+flights |> 
+  summarize(
+    delay = mean(dep_delay, na.rm = TRUE),
+    n = n(),
+    .by = month
+  )
+```
+
+Or if want to group by multiple variables
+```{r}
+flights |> 
+  summarize(
+    delay = mean(dep_delay, na.rm = TRUE),
+    n = n(),
+    .by = c(origin, dest)
+  )
+```
+
+.by works with all verbs, has advantage of not needing to use .groups to suppress grouping message or ungroup() when you are done
+
+### 3.5.7 Exercises
+
+1. Which carrier has the worst average delays? 
+```{r}
+flights |> 
+  summarize(
+    delay = mean(dep_delay, na.rm = TRUE),
+    .by = carrier
+    ) |> 
+  arrange(desc(delay))
+```
+
+Challenge: can you disentangle effects of bad airports vs bad carriers?
+```{r}
+# Hint given by problem
+flights |> 
+  summarize(n(), .by = c(carrier, dest))
+
+# Get average delays for carrier/airport combo
+by_carrier <- flights |> 
+  summarize(
+    carrier_delay = mean(dep_delay, na.rm = TRUE),
+    n = n(),
+    .by = c(carrier, dest)
+    )
+
+# Get average delays for each airport
+by_airport <- flights |> 
+  summarize(
+    airport_delay = mean(dep_delay, na.rm = TRUE),
+    .by = dest
+  )
+
+# Merge and compare difference between carrier and airport
+left_join(by_carrier, by_airport, by = join_by(dest)) |> 
+  mutate(diff = carrier_delay - airport_delay) |> 
+  relocate(diff, .after = dest) |> 
+  arrange(desc(diff))
+```
+Using a join we can compare a carrier's performance at each airport to the average delay at an airport, however, as you can see, some of these carriers have relatively few flights to a certain airport, so we can't disentangle in all cases
+
+Let's drop cases with relatively few flights
+```{r}
+left_join(by_carrier, by_airport, by = join_by(dest)) |> 
+  mutate(diff = carrier_delay - airport_delay) |> 
+  relocate(diff, .after = dest) |> 
+  arrange(desc(diff)) |> 
+  filter(n >= 10)
+```
+Here we can confirm WN, EV, and 9E are among some of the worst performing carriers in terms of delays
+
+2. Find the flights that are most delayed upon departure from each destination
+```{r}
+flights |> 
+  summarise(delay = mean(dep_delay, na.rm = TRUE), .by = dest) |> 
+  arrange(desc(delay))
+```
+
+3. How do delays vary over the course of the day? Illustrate with a plot
+```{r}
+flights |>
+  summarise(
+    delay = mean(dep_delay, na.rm = TRUE),
+    .by = sched_dep_time
+    ) |> 
+  ggplot(
+    mapping = aes(
+      x = sched_dep_time, 
+      y = delay
+    )
+) +
+  geom_point(na.rm = TRUE) +
+  geom_smooth(se = FALSE)
+```
+
+4. What happens if you supply a negative n to slice_min() and friends?
+It will grab everything except n rows
+So slice_min(-1) will grab all rows except the smallest row
+slice_max(-1) will grab all rows except the largest row
+```{r}
+flights |>
+  group_by(dest) |> 
+  relocate(dest) |> 
+  slice_min(dep_delay, n = -1)
+
+flights |>
+  group_by(dest) |> 
+  relocate(dest) |> 
+  slice_max(dep_delay, n = -1)
+```
+
+5. Explain what count() does in terms of the dplyr verbs, what does sort argument to count() do?
+```{r}
+?count
+```
+It groups by the argument you feed it, and then returns n(), the number of rows
+If sort is TRUE, the largest groups will be shown on top
+
+6. Suppose we have the following tiny data frame:
+```{r}
+df <- tibble(
+  x = 1:5,
+  y = c("a", "b", "a", "a", "b"),
+  z = c("K", "K", "L", "L", "K")
+)
+```
+
+a) Write down what you think the output looks like, then check if you are correct and describe what group_by() does
+```{r}
+df |> 
+  group_by(y)
+```
+tibble will show Groups: y [2] because there are two groups, "a" and "b"
+group_by() creates groups for each distinct value in y, but it only creates those groups, so the rest of the tibble looks the same
+
+b) Predict the output, then check if correct, describe what arrange() does, comment how its different from group_by() in a)
+```{r}
+df |> 
+  arrange(y)
+```
+tibble will have re-ordered rows, with rows where x is 1, 3, and 4 appearing first because the tibble is sorted by column y
+Unlike part (a, the rows are manipulated and no groups are created
+
+c) Predict output, describe what pipeline does
+```{r}
+df |> 
+  group_by(y) |> 
+  summarize(mean_x = mean(x))
+```
+y     mean_x
+<chr> <dbl>
+a     8/3
+b     7/2
+Takes the mean of the x values for each group in y, which means taking the mean of all the x values for rows where y is "a" and then doing same for "b"
+
+d) Do the same then comment on what the message says
+```{r}
+df |> 
+  group_by(y, z) |> 
+  summarize(mean_x = mean(x))
+```
+There will be three groups:
+1) y = a, z = K
+2) y = a, Z = L
+3) y = b, z = K
+Then within each group the mean value of x will be computed
+y     z     mean_x
+<chr> <chr> <dbl>
+a     K     2
+a     L     4
+b     K     3.5
+After computing the mean, summarise() will return the dataset with the last group (in this case z) dropped, so to override this and keep all groups use .groups = "keep" 
+
+e) Do the same, how is output different from d)
+```{r}
+df |> 
+  group_by(y, z) |> 
+  summarize(mean_x = mean(x), .groups = "drop")
+```
+The output will be exactly the same as d), except the resulting tibble will have no groups, so if you were to chain another summarize with a pipe, it will calculate the mean for all of the data
+```{r}
+df |> 
+  group_by(y, z) |> 
+  summarize(mean_x = mean(x), .groups = "drop") |> 
+  summarize(mean_x = mean(mean_x))
+```
+
+f) Do the same, how are the outputs of the two pipelines different
+```{r}
+df |> 
+  group_by(y, z) |> 
+  summarize(mean_x = mean(x))
+
+df |> 
+  group_by(y, z) |> 
+  mutate(mean_x = mean(x))
+```
+The first pipeline is the same as d) and it will not have column x in the output, its dimensions will be 3x3
+The second pipeline creates a new column with the mean x value for each group, so the resulting dimension will be 5x4 since each original row will be retained except it will also have the mean value for its group at the end
+
+## 3.6 Case study: aggregates and sample size
+
+Whenever do any aggregation, good idea to include a count, n(), so you make sure you aren't drawing conclusions from small amounts of data
+
+Demonstrate this with baseball data from Lahman package, specifically will compare batting average (hit / at bat)
+```{r}
+batters <- Lahman::Batting |> 
+  group_by(playerID) |> 
+  summarize(
+    performance = sum(H, na.rm = TRUE) / sum(AB, na.rm = TRUE),
+    n = sum(AB, na.rm = TRUE)
+  )
+batters
+```
+
+When plot batting average (performance) against number of opportunities to hit the ball (n), see two patterns
+1. Variation in performance is larger among players with fewer at-bats, shape is very characteristic, whenever you plot a mean (or other summary statistics) vs group size, will see variation decreases as sample size increases (law of large numbers)
+2. Positive correlation between skill (performance) and at-bats (n) because teams want to give best batters most opportunities to hit
+```{r}
+batters |> 
+  filter(n > 100) |> 
+  ggplot(aes(x = n, y = performance)) +
+  geom_point(alpha = 1 / 10) +
+  geom_smooth(se = FALSE)
+```
+Note handy integration between dply and ggplot2, just have to remember to switch from |> to + 
+
+This concept also has implications for ranking, if naively sort on desc(performance), will find many players with few at-bats, not necessarily the most skilled players
+```{r}
+batters |> 
+  arrange(desc(performance))
+```
+
+### 3.6.1 Extension
+
+[Understanding empirical Bayesian estimation (using baseball statistics)](http://varianceexplained.org/r/empirical_bayes_baseball/)
+
+You can't always throw out data that doesn't meet some minimum, losing information
+
+One approach is beta distribution (probability distribution of probabilities)
+- If a player's expected pre-season batting average is 0.27 (which will be represented by beta distribution) then bats 100 out of 300, will update beta distribution to be 0.303 less than naive estimate of 0.333 but higher than season-start
+- Can also see that hitting on first bat (2nd curve) is barely noticable because one hit doesn't tell us much
+- Helps represent prior expectations and updating based on new evidence
+
+```{r}
+# Will plot three curves:
+# 1) alpha = 81, beta = 219
+# 2) alpha = 82, beta = 219
+# 3) alpha = 181, beta = 419
+tibble(a = c(81, 82, 81 + 100), b = c(219, 219, 219 + 200)) |> 
+  rowwise() |>  # Go row by row
+  mutate(data = list(tibble(  # Creates column data with tibbles as value
+    # List serves as container to hold nested tibbles in parent table
+    # Each parent row values gets broadcasted to the nested rows in its tibble
+    x = seq(0, 1, 0.001),  # Points at increments 0.001
+    y = dbeta(x, a, b),  # Apply to the beta distribution function
+    parameters = paste("\u03B1 = ", a, ", \u03B2 = ", b)  # For label
+  ))) |> 
+  unnest(data) |>  # Expands tibbles to data frame
+  # Turning parameter into factor will preserve legend order 
+  mutate(parameters = factor(parameters, levels = unique(parameters))) |> 
+
+  # Plot distributions
+  ggplot(aes(x, y, color = parameters)) +
+  geom_line(na.rm = TRUE) +
+  xlim(0, 0.5) +
+  ylab("Density of beta")
+```
+
+Related method is empirical Bayesian estimation, where beta distribution is used to improve large set of estimates, and as long as you have a lot of examples, you don't need prior expectations
+
+Prepare and clean data first
+```{r}
+career <- Lahman::Batting |> 
+  filter(AB > 0) |> 
+  # Get rid of pitchers (weak batters)
+  anti_join(Lahman::Pitching, by = "playerID") |>
+  summarize(H = sum(H), AB = sum(AB), .by = playerID) |> 
+  mutate(average = H / AB)
+
+# Use names as identifier instead
+career <- Lahman::People |> 
+  as_tibble() |> 
+  select(playerID, nameFirst, nameLast) |> 
+  unite(name, nameFirst, nameLast, sep = " ") |>  # Pastes columns into one
+  inner_join(career, by = "playerID") |> 
+  select(-playerID)
+
+career
+```
+
+Who are best players in history? Let's check players with highest batting average...
+```{r}
+career |> 
+  arrange(desc(average)) |> 
+  head(5)
+```
+Probably just got lucky...
+
+What about the worst?
+```{r}
+career |> 
+  arrange(average) |> 
+  head(5)
+```
+Average here is not a great estimate
+
+Step 1: estimate a prior from all your data
+
+Let's filter out noise (< 500 at bats) and look at the distribution of batting averages across players
+```{r}
+career |> 
+  filter(AB >= 500) |> 
+  ggplot(aes(average)) +
+  geom_histogram(binwidth = 0.005)
+```
+
+Step 1: estimate a beta prior using this data; estimating from data currently analyzing not typical, usually decide ahead of time
+Empirical Bayes is an approximation of more exact Bayesian methods, with the amount of data we have (a lot), it's very good
+
+So far data looks good, if it had two or more peaks then might need mixture of betas/more complicated model
+
+Need to pick alpha0 and beta0, the "hyper-parameters" of the model
+
+Use fitdistr function from MASS to fit probability distribution to data
+```{r}
+# Filter players we have good estimate of (just like graph)
+career_filtered <- career |> 
+  filter(AB >= 500)
+
+m <- MASS::fitdistr(
+  career_filtered$average,  # Numeric vector with data
+  dbeta,  # Function returning a density 
+  start = list(shape1 = 1, shape2 = 2)
+  )  # List with parameters to be optimized
+
+alpha0 <- m$estimate[1]
+beta0 <- m$estimate[2]
+
+alpha0
+beta0
+```
+Lets fit to data
+```{r}
+ggplot(data = career_filtered) +
+  geom_histogram(
+    mapping = aes(average, y = after_stat(density)),
+    binwidth = 0.005
+  ) +
+  stat_function(
+    fun = function(x) dbeta(x, alpha0, beta0),
+    color = "red",
+    linewidth = 1
+  ) +
+  xlab("Batting average")
+```
+
+Step 2: use that distribution as prior for each individual estimate
+
+Start with overall prior and update based on individual evidence
+
+This would yield a higher estimate for the batter who has 300 hits in 1000 AB's than the batter who has 4 hits in 10 AB's, whereas without this method the 4/10 would be considered higher
+
+Perform calculation for all batters
+```{r}
+career_eb <- career |> 
+  mutate(eb_estimate = (H + alpha0) / (AB + alpha0 + beta0))
+```
+
+Results:
+
+Now we can ask who are the best batters?
+```{r}
+career_eb |> 
+  arrange(desc(eb_estimate)) |> 
+  head(5)
+```
+
+Who are the worst batters?
+```{r}
+career_eb |> 
+  arrange(eb_estimate) |> 
+  head(5)
+```
+
+Empirical Bayes did not simply pick batters with one or two at-bats, instead finding players who bat well/poorly over a long career
+
+```{r}
+ggplot(career_eb, aes(x = average, y = eb_estimate, color = AB)) +
+  geom_hline(yintercept = alpha0 / (alpha0 + beta0), color = "red", lty = 2) +
+  geom_point() +
+  geom_abline(color = "red") +
+  scale_color_gradient(transform = "log", breaks = 10 ^ (1:5)) +
+  xlab("Batting average") +
+  ylab("Empirical Bayes batting average")
+```
+Horizontal dashed line marks y = alpha0 / alpha0 + beta0, what we would guess would be someone's batting average with no evidence at all
+Points above it move down towards it, points below move up towards it
+Diagonal line is x = y, points near it didn't get shrunk by empirical Bayes, these are also the ones with the highest at-bats, light blue; there was enough evidence to believe the naive estimate
+This process is sometimes called shrinkage because moved all estimates towards the average, the less evidence the more movement
+Extraordinary outliers require extraordinary evidence!
+
+
+
