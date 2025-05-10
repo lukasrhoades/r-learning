@@ -1,0 +1,363 @@
+---
+title: "r4ds-ch5"
+output: pdf_document
+---
+
+# Ch 5 Data tidying
+
+## 5.1 Introduction
+
+Pivoting, the primary tool for tidying data, allows you to change the form of the data without changing any value
+
+### 5.1.1 Prerequisites
+```{r}
+library(tidyverse)
+```
+
+## 5.2 Tidy data
+
+Each of the following datasets has the same four variables but organizes values in a different way
+```{r}
+table1
+table2
+table3
+```
+table1 will be easiest to use in tidyverse because it's tidy
+
+Three rules make a dataset tidy:
+1. Each variable is a column; each column is a variable
+2. Each observation is a row; each row is an observation
+3. Each value is a cell; each cell is a value
+
+Why make dataset tidy?
+1. Consistent structure makes it easy to learn tools that work with it
+2. Placing variables in columns allows R's vectorized nature to shine
+
+dplyr, ggplot2, all other tidyverse packages are designed to work with tidy data, here are some examples
+```{r}
+# Compute rate per 10,000
+table1 |> 
+  mutate(rate = cases / population * 10000)
+
+# Compute total cases per year
+table1 |> 
+  group_by(year) |> 
+  summarize(total_cases = sum(cases))
+
+# Visualize changes over time
+ggplot(table1, aes(x = year, y = cases)) +
+  geom_line(aes(group = country), color = "grey50") +
+  geom_point(aes(color = country, shape = country)) +
+  scale_x_continuous(breaks = c(1999, 2000))  # x-axis breaks at 1999 and 2000
+```
+
+### 5.2.1 Exercises
+
+1. For each of sample tables, describe what each observation and each column represents
+
+For table1:
+Each observation represents the documented number of TB cases and population for a country in a given year, and each column represents a variable of interest (country, year, cases, population)
+
+For table2:
+Each observation is either the number of TB cases in a given country for a given year or the country's population in that year, and the type column represents which variable is being measured by the count column
+
+For table3:
+Each observation represents the same thing as in table1, except the rate column represents two variables; each variable is not its own column
+
+2. Sketch out the process to calculate rate (per 10k) for table2 and table3
+a. Extract # of TB cases per country per year
+table2: Filter rows where type is cases
+table3: Either split the rate columns into two columns based on "/" or take whatever is to the left of "/"
+b. Extract the matching population per country per year
+table2: Filter rows where type is population
+table3: Take what is to the right of "/"
+c. Divide cases by population and multiply by 10000
+d. Store back in appropriate place
+table2: Add a new row where type is called rate
+table3: Rate column already exists, replace it with the value computed
+
+## 5.3 Lengthening data
+
+Most real data is untidy:
+1. Often structured to make entry, not analysis, easy
+2. Most aren't familiar with the principles
+
+To tidy data:
+1. Figure out what underlying variables and observations are
+2. Pivot data into tidy form, with variables in columns and observations in rows
+
+tidyr provides 2 functions for pivoting: pivot_longer() and pivot_wider()
+pivot_longer() is most common case
+
+### 5.3.1 Data in column names
+
+billboard dataset records billboard rank of songs in year 2000
+```{r}
+billboard
+```
+Each observation is a song, first 3 column are variables that describe the song
+Then, next 76 columns describe rank of song each week, and the column names are one variable (week) and the cells are another (rank)
+
+To tidy, use pivot_longer()
+```{r}
+billboard |> 
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank"
+  )
+```
+
+After the data, there are three key arguments:
+1. cols specifies which columns need to be pivoted (they aren't variables), uses same syntax as select() so could use
+!c(artist, track, date.entered) or starts_with("wk")
+2. names_to names the variable stored in column name, which we named week
+3. values_to names the variable stored in cell values, which we named rank
+
+week and rank are in quotes because these variables don't exist yet in the data
+
+If a song is on top 100 for less than 76 weeks, remaining weeks are filled with NAs, which don't represent unknown observations but exist because of structure of original dataset, so can ask pivot_longer() to get rid of them with values_drop_na = TRUE
+```{r}
+billboard |> 
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank",
+    values_drop_na = TRUE
+  )
+```
+Number of rows now much lower
+
+Data is now tidy but can make future computation easier by converting values of week from character strings to numbers using mutate() and readr::parse_number()
+parse_number() will extract the first number from the string, ignoring all other text
+```{r}
+billboard_longer <- billboard |> 
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank",
+    values_drop_na = TRUE
+  ) |> 
+  mutate(
+    week = parse_number(week)
+  )
+billboard_longer
+```
+
+Now we can visualize how song ranks change over time
+```{r}
+billboard_longer |> 
+  ggplot(aes(x = week, y = rank, group = track)) +
+  geom_line(alpha = 0.25) +
+  scale_y_reverse()
+```
+Can see that very few songs stay in top 100 for more than 20 weeks
+
+### 5.3.2 How does pivoting work?
+
+Start with simple dataset, three patient ids A, B, and C, and take two blood pressure measurements on each patient
+tribble() is handy way of constructing small tibbles by hand
+```{r}
+df <- tribble(
+  ~id,  ~bp1, ~bp2,
+   "A",  100,  120,
+   "B",  140,  115,
+   "C",  120,  125
+)
+```
+
+Want new dataset to have three variables, id (already exists), measurement (the column names), and value (the cell values)
+To achieve this, need to pivot longer
+```{r}
+df |> 
+  pivot_longer(
+    cols = bp1:bp2, 
+    names_to = "measurement",
+    values_to = "value"
+  )
+```
+How does it work?
+Values in a column that are already a variable are repeated (id), once for each column that is pivoted (so twice)
+Column names become values (bp1, bp2) in a new variable (measurement, as defined in names_to), repeated once for each row in the dataset
+Cell values become new values (100, 120, etc.) in a new variable (value, as defined in values_to), unwound (not repeated) row by row
+
+### 5.3.3 Many variables in column names
+
+More challenging is when multiple pieces of info are crammed into column names, and you want to store them in separate new variables
+For example, take a look at who2 dataset, source of table1
+```{r}
+who2
+```
+This dataset recorded by WHO records info about TB diagnoses, two columns are variables easy to interpret (country, year), followed by 56 columns with a pattern
+Each is made up of three pieces separated by _, first (sp/rel/ep) describes method used for diagnosis, second (m/f) is gender (coded as binary), and third is the age range(014 being 0-14 for eaxmple)
+So really 6 pieces of information recorded:
+- country, year (already columns)
+- method, gender, age range (combined in other column names)
+- patient count (in cells)
+
+To organize this info into 6 columns, use pivot_longer() with vector of column names for names_to and instructors for splitting original variable names into pieces for names_sep as well as a column name for values_to
+```{r}
+who2 |> 
+  pivot_longer(
+    cols = !(country:year),
+    names_to = c("diagnosis", "gender", "age"),
+    names_sep = "_",
+    values_to = "count"
+  )
+```
+An alternative to names_sep is names_pattern, can use with regex
+
+In the above example, instead of column names pivoting into a single column, they pivot into multiple columns
+Can imagine as two steps (first pivot then separate) but under hood happens in a single step
+
+### 5.3.4 Data and variables names in the column headers
+
+Next step in complexity is when column names include mix of variable values and names, for example in household dataset
+```{r}
+household
+```
+This dataset contains data about five families, with names and date of birth of up to two children
+The new challenge is that the column names contain the names of two variables (dob, name), and the values of another (child, with values 1 or 2)
+
+To solve this problem, again need to supply vector to names_to but this time use special ".value" sentinel, which isn't the name of a variable but unique value that tells pivot_longer() to do something different
+This overrides usual values_to argument, instead uses first component of pivoted column name as variable name in the output
+```{r}
+household |> 
+  pivot_longer(
+    cols = !family,
+    names_to = c(".value", "child"),
+    names_sep = "_",
+    values_drop_na = TRUE
+  )
+```
+Use values_drop_na since shape of input forces creation of explicit missing variables (such as for families with only one child)
+
+When you use ".value" in names_to, column names in input contribute to both values and variable names in output
+Above, .value is used to say that whatever is before _ is the output column name and whatever is after _ is the value of the child column 
+
+## 5.4 Widening data
+
+pivot_longer() tackled case where values ended up in column names; makes dataset longer by adding rows
+pivot_wider() makes datasets wider by adding columns and reducing rows, helps when one observation is spread across multiple rows
+
+Start by looking at Centers of Medicare and Medicaid data about patient experiences
+```{r}
+cms_patient_experience
+```
+Core unit being studied is an organization, but each is spread across 6 rows with one row for each measurement taken in survey organization
+
+Can see complete set of values for measure_cd and measure_title by using distinct()
+```{r}
+cms_patient_experience |> 
+  distinct(measure_cd, measure_title)
+```
+Neither columns would make good variable names, measure_cd doesn't hint at meaning of variable and measure_title includes long sentence containing spaces
+Use measure_cd as source for new column names now, but in real analysis might want to create own variable names that are short and meaningful
+
+pivot_wider() has opposite interface to pivot_longer(), instead of choosing new column names need to provide existing columns that define the values (values_from) and the column name (names_from)
+```{r}
+cms_patient_experience |> 
+  pivot_wider(
+    names_from = measure_cd,
+    values_from = prf_rate
+  )
+```
+Output doesn't look right, still have multiple rows for each organization
+Need to tell pivot_wider() which column(s) have values that uniquely identify each row, in this case those are variables starting with "org"
+```{r}
+cms_patient_experience |> 
+  pivot_wider(
+    id_cols = starts_with("org"),
+    names_from = measure_cd,
+    values_from = prf_rate
+  )
+```
+
+### 5.4.1 How does pivot_wider() work?
+
+Once again begin with simple dataset, this time two patients with ids A and B, three blood pressure measurements on patient A and two on patient B
+```{r}
+df <- tribble(
+  ~id, ~measurement, ~value,
+  "A",        "bp1",    100,
+  "B",        "bp1",    140,
+  "B",        "bp2",    115,
+  "A",        "bp2",    120,
+  "A",        "bp3",    105
+)
+```
+
+Take the values from the value column and names from measurement column
+```{r}
+df |> 
+  pivot_wider(
+    names_from = measurement,
+    values_from = value
+  )
+```
+
+To begin the process pivot_wider() needs to first figure out what will go in rows and columns, new column names will be unique values of measurement
+```{r}
+df |> 
+  distinct(measurement) |> 
+  pull()
+```
+
+By default, rows in output are determined by all variables that aren't going into new names or values, these are called id_cols
+Here, there is only one column, but in general can be any number
+```{r}
+df |> 
+  select(-measurement, -value) |> 
+  distinct()
+```
+
+pivot_wider() then combines these results to generate an empty dataframe
+```{r}
+df |> 
+  select(-measurement, -value) |> 
+  distinct() |> 
+  mutate(x = NA, y = NA, z = NA)
+```
+
+It then fills in all the missing values using data in the input, in this case not every cell has corresponding value in input as there's no third bp measurement for patient B, so that cell remains missing
+
+What happens if there are multiple rows in the input that correspond to one cell in the output? The example below has two rows that correspond to id "A" and measurement "bp1"
+```{r}
+df <- tribble(
+  ~id, ~measurement, ~value,
+  "A",        "bp1",    100,
+  "A",        "bp1",    102,
+  "A",        "bp2",    120,
+  "B",        "bp1",    140,
+  "B",        "bp2",    115
+)
+```
+
+If attempt to pivot this, get an output that contains list-columns
+```{r}
+df |> 
+  pivot_wider(
+    names_from = measurement,
+    values_from = value
+  )
+```
+
+Follow the hint to figure out where the problem is
+```{r}
+df |> 
+  group_by(id, measurement) |> 
+  summarize(n = n(), .groups = "drop") |> 
+  filter(n > 1)
+```
+Then up to you to figure out what's gone wrong and repair underlying damage or use grouping/summarizing skills to ensure each combo of row and column values only has a single row
+
+## 5.5 Summary
+
+Examples here are selection of those from vignette("pivot", package = "tidyr") so go there if encounter a problem this chapter doesn't cover
+
+Another challenge is it can be hard to define what a variable is, fine to be pragmatic and use whatever makes analysis easiest
+
+
+
+
+
