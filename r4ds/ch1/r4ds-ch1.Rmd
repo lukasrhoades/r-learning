@@ -184,7 +184,7 @@ ggplot(data = penguins) +
   geom_point()
 ```
 
-There is an error because the mapping (axes) have not been specified, to fix, add some axes to create a scatterplot
+There is an error because the aesthetic mappings have not been specified, to fix, add some aesthetics to create a scatterplot
 
 ```{r}
 ggplot(
