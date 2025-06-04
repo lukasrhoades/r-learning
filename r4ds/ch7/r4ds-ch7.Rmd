@@ -164,7 +164,8 @@ annoying <- tibble(
 
 a. Extracting the the variable called 1
 ```{r}
-annoying$`1`
+annoying |> 
+  select(`1`)
 ```
 
 b. Plotting a scatterplot of 1 vs 2
