@@ -1,0 +1,737 @@
+---
+title: "faur ch 2 exercises"
+output: pdf_document
+date: "2025-08-04"
+---
+
+**2.1**\
+When rolling two dice, what is the probability that one die is twice the
+other?\
+$|S| = 36$\
+The event "one die is twice the other" is represented by\
+$E = \{(2,1), (1,2), (4,2), (2,4), (6,3), (3,6)\}$\
+$|E| = 6$\
+$P(E) = \frac{|E|}{|S|} = \frac{6}{36} = \boxed{\frac{1}{6}}$
+
+**2.2**\
+Consider an experiment where you roll two dice, and subtract the smaller
+value from the larger value (getting 0 in case of a tie).
+
+a. What is the probability of getting zero?\
+$|S| = 36$\
+The event "getting zero" is represented by\
+$E = \{(1,1), (2,2), (3,3), (4,4), (5,5), (6,6)\}$\
+$|E| = 6$\
+$P(E) = \frac{|E|}{|S|} = \frac{6}{36} = \boxed{\frac{1}{6}}$
+
+b. What is the probability of getting four?\
+The event "getting four" is represented by\
+$E = \{(2,6), (6,2), (1,5), (5,1)\}$\
+$|E| = 4$\
+$P(E) = \frac{|E|}{|S|} = \frac{4}{36} = \boxed{\frac{1}{9}}$
+
+**2.3**\
+A hat contains slips of paper numbered 1 through 6. You draw two slips
+of paper at random from the hat, without replacing the first slip into
+the hat.
+
+a. Write out the sample space $S$ for this experiment.\
+$$
+S = \left(
+\begin{array}{l}
+(1,2), (1,3), (1,4), (1,5), (1,6) \\
+(2,1), (2,3), (2,4), (2,5), (2,6) \\
+(3,1), (3,2), (3,4), (3,5), (3,6) \\
+(4,1), (4,2), (4,3), (4,5), (4,6) \\
+(5,1), (5,2), (5,3), (5,4), (5,6) \\
+(6,1), (6,2), (6,3), (6,4), (6,5)
+\end{array}
+\right)
+$$
+
+b. Write out the event E, "the sum of the numbers on the slips of paper
+is 4."\
+$E = \{(1,3), (3,1)\}$\
+
+c. Find P(E).\
+$|S| = 30$\
+$|E| = 2$\
+$P(E) = \frac{|E|}{|S|} = \frac{2}{30} = \boxed{\frac{1}{15}}$
+
+d. Let $F$ be the event "the larger number minus the smaller number is
+0." What is $P(F)$?\
+$F = \emptyset$\
+$|F| = 0$\
+$P(F) = \frac{|F|}{|S|} = \frac{0}{30} = \boxed{0}$
+
+**2.4**\
+Suppose there are two boxes and each contains slips of paper numbered 1-8. You draw one number at random from each box.
+
+a. Estimate the probability that the sum of the numbers is a 8.
+```{r 2.4.a}
+mean(replicate(10000, {
+  sum(sample(x = 1:8, size = 2, replace = TRUE)) == 8
+}))
+```
+
+b. Estimate the probability that at least one of the numbers is a 2.
+```{r 2.4.b}
+mean(replicate(10000,{
+  2 %in% sample(x = 1:8, size = 2, replace = TRUE)
+}))
+```
+
+**2.5**
+Suppose the proportion of M&M's by color is:
+$$
+\begin{array}{cccccc}
+Yellow & Red  & Orange & Brown & Green & Blue \\
+0.14   & 0.13 & 0.20   & 0.12  & 0.20  & 0.21
+\end{array}
+$$
+
+a. What is the probability that a randomly selected M&M is not green?\
+Let $P(E)$ be the probability that a randomly selected M&M is not green, then $P(\overline E)$ is the probability that a randomly selected M&M is green.\
+$P(E) = 1 - P(\overline E) = 1 - 0.20 = \boxed{0.80}$
+
+b. What is the probability that a randomly selected M&M is red, orange, or yellow?\
+Let $P(A)$ be the probability that a randomly selected M&M is red, $P(B)$ be the probability that it is orange, and $P(C)$ that it is yellow.\
+$P(A\cup B \cup C) = P(A) + P(B) + P(C) - P(A \cap B \cap C) = 0.13 + 0.20 + 0.14 - 0 = \boxed{0.47}$\
+A, B, C, are pairwise disjoint, so this is equivalent to the sum of their individual probabilities. This is because an M&M cannot be multiple colours simultaneously.
+
+c. Estimate the probability that a random selection of four M&M's will contain a blue one.
+```{r 2.5.c}
+mm.colors <- c("Yellow", "Red", "Orange", "Brown", "Green", "Blue")
+mm.probs <- c(0.14, 0.13, 0.20, 0.12, 0.20, 0.21)
+
+mean(replicate(
+  10000,
+  {
+    "Blue" %in% sample(
+      x = mm.colors,
+      size = 4,
+      replace = TRUE,
+      prob = mm.probs
+    )
+  }
+))
+```
+
+d. Estimate the probability that a random selection of six M&M's will contain all six colors.
+```{r 2.5.d}
+mean(replicate(10000, {
+  all(mm.colors %in% sample(
+    x = mm.colors,
+    size = 6,
+    replace = TRUE,
+    prob = mm.probs
+  ))
+}))
+```
+
+**2.6**\
+With the distribution from Problem 2.5, suppose you buy a bag of M&M's with 30 pieces in it. Estimate the probability of obtaining at least 9 Blue M&M's and at least 6 Orange M&M's in the bag.
+```{r 2.6}
+mean(replicate(
+  10000,
+  {
+    sim_bag <- sample(
+      x = mm.colors,
+      size = 30,
+      replace = TRUE,
+      prob = mm.probs
+    )
+    sum(sim_bag == "Blue") >= 9 & sum(sim_bag == "Orange") >= 6
+  }
+))
+```
+
+**2.7**\
+Blood types O, A, B, and AB have the following distribution in the United States:
+$$
+\begin{array}{l c c c c}
+\text{Type} & O & A & B & AB \\
+\text{Probability} & 0.40 & 0.04 & 0.11 & 0.45
+\end{array}
+$$
+What is the probability that two randomly selected people have the same blood type?
+```{r 2.7}
+blood.types = c("O", "A", "B", "AB")
+blood.probs = c(0.40, 0.04, 0.11, 0.45)
+
+mean(replicate(10000, {
+  length(unique(sample(x = blood.types, size = 2, replace = TRUE, prob = blood.probs))) == 1
+}))
+```
+
+**2.8**\
+Use simulation to estimate the probability that a 10 is obtained when two dice are rolled.
+```{r 2.8}
+mean(replicate(10000, {
+  sum(sample(x = 1:6, size = 2, replace = TRUE)) == 10
+}))
+```
+
+**2.9**\
+Estimate the probability that exactly 3 heads are obtained when 7 coins are tossed.
+```{r 2.9}
+mean(replicate(10000, {
+  sum(sample(x = c("H", "T"), size = 7, replace = TRUE) == "H") == 3
+}))
+```
+
+**2.10**\
+Estimate the probability that the sum of five dice is between 15 and 20, inclusive.
+```{r 2.10}
+mean(replicate(10000, {
+  rolls <- sum(sample(x = 1:6, size = 5, replace = TRUE))
+  rolls >= 15 & rolls <= 20
+}))
+```
+
+**2.11**\
+Suppose a die is tossed repeatedly, and the cumulative sum of all tosses seen is maintained. Estimate the probability that the cumulative sum ever is exactly 20. The function `cumsum` computes the cumulative sums of a vector.
+```{r 2.11}
+mean(replicate(10000, {
+20 %in% cumsum(sample(x = 1:6, size = 20, replace = TRUE))
+}))
+```
+
+**2.12**\
+Rolling two dice.
+
+a. Simulate rolling two dice and adding their values. Perform 10,000 simulations and make a bar chart showing how many of each outcome occurred.
+```{r 2.12.a}
+barplot(table(replicate(10000, {
+  sum(sample(x = 1:6, size = 2, replace = TRUE))
+})))
+```
+
+b. You can buy *trick* dice, which look (kind of) like normal dice. One die has numbers 5, 5, 5, 5, 5, 5. The other has numbers 2, 2, 2, 6, 6, 6. Simulate rolling the two trick dice and adding their values. Perform 10,000 simulations and make a bar chart showing how many of each outcome occurred.
+```{r 2.12.b}
+barplot(table(replicate(10000, {
+  die1 <- sample(x = rep(5, 5), size = 1)  # Always 5
+  die2 <- sample(x = c(2, 2, 2, 6, 6, 6), size = 1)
+  die1 + die2
+})))
+```
+
+c. *Sicherman dice* also look like normal dice, but have unusual numbers. One die has numbers 1, 2, 2, 3, 3, 4. The other has 1, 3, 4, 5, 6, 8. Simulate rolling the two Sicherman dice and adding their values. Perform 10,000 simulations and make a bar chart showing how many of each outcome occurred. How does your answer compare to part (a)?
+```{r 2.12.c}
+barplot(table(replicate(10000, {
+  die1 <- sample(x = c(1, 2, 2, 3, 3, 4), size = 1)
+  die2 <- sample(x = c(1, 3, 4, 5, 6, 8), size = 1)
+  die1 + die2
+})))
+```
+The results look remarkably similar to part (a).
+
+**2.13**\
+In a room of 200 people (including you), estimate the probability that at least one other person will be born on the same day as you.
+```{r 2.13}
+mean(replicate(10000, {
+  my_bday <- sample(x = 1:365, size = 1)
+  my_bday %in% sample(x = 1:365, size = 199, replace = TRUE)
+}))
+```
+
+**2.14**\
+In a room of 100 people, estimate the probability that at least two people were not only born on the same day, but also during the same hour of the same day.
+```{r 2.14}
+mean(replicate(10000, {
+  anyDuplicated(sample(x = 1:(365*24), size = 100, replace = TRUE)) > 0
+}))
+```
+
+**2.15**\
+Assuming there are no leap-year babies and that all birthdays are equally likely, estimate the probability that at least **three** people have the same birthday in a group of 50 people. Use `table`.
+```{r 2.15}
+mean(replicate(10000, {
+  any(table(sample(x = 1:365, size = 50, replace = TRUE)) >= 3)
+}))
+```
+
+**2.16**\
+If 100 balls are randomly placed into 20 urns, estimate the probability that at least one of the urns is empty.
+```{r 2.16}
+mean(replicate(10000, {
+  length(table(sample(x = 1:20, size = 100, replace = TRUE))) != 20
+}))
+```
+
+**2.17**\
+A standard deck of cards has 52 cards. In blackjack, a player gets two cards and adds their values. Cards count as their usual numbers, except Aces are 11 (or 1), while K, Q, and J are all 10.  
+
+a. "Blackjack" means getting an Ace and a value 10 card. What is the probability of getting a blackjack?
+Let $P(E)$ be the probability of getting a blackjack.\
+The sample space is all possible two card hands.\
+$|S| = {52 \choose 2} = \frac{52!}{2!50!} = \frac{52 \times 51}{2 \times 1} = 1326$\
+$|E| = 4 \times (4 \times 4) = 4 \times 16 = 64$ because there are four ways to choose an Ace as the first card (one for each suit), and 16 ways to choose a value 10 card (3 face cards plus 10, times 4 different suits). The event blackjack thus consists of 64 possible outcomes.\
+$P(E) = \frac{|E|}{|S|} = \frac{64}{1326} = \frac{32}{663} \approx \boxed{0.048}$
+
+b. What is the probability of getting 19?\
+Let $P(E)$ be the probability of getting 19.\
+$|S| = 1326$ as before.\
+19 is only possible through 11 + 8 (one outcome, ignoring suit) and 10 + 8 (four outcomes, ignoring suit)\
+$E = \{(A,8), (10,9), (K,9), (Q,9), (J,9)\}$ when ignoring suit.\
+To account for suit, multiply the number of outcomes in $E$ by $4^2$ because each first card in the outcomes listed in the set above can be any of four suits, and the same is true of the second card. Multiply $4 \times 4$ to get the number of possible outcomes for each hand.\
+Therefore, $|E| = 5 \times 16 = 80$.\
+$P(E) = \frac{|E|}{|S|} = \frac{80}{1326} = \frac{40}{663} \approx \boxed{0.06}$
+
+Use R to simulate dealing two cards, and compute these probabilities experimentally.
+```{r 2.17}
+deck = rep(c(2:10, rep(10, 3), 11), 4)
+
+mean(replicate(10000, {
+  sum(sample(x = deck, size = 2)) == 21
+}))
+
+mean(replicate(10000, {
+  sum(sample(x = deck, size = 2)) == 19
+}))
+```
+
+**2.18**\
+Deathrolling in World of Warcraft works as follows. Player 1 tosses a 1000-side die, say they get $x_1$. Then player 2 tosses a die with $x_1$ sides on it. Say they get $x_2$, so then player 1 tosses a die with $x_2$ sides on it. This pattern continues until a player rolls a 1, the player who rolls the 1 loses. Estimate via simulation the probability that a 1 will be rolled on the 4th roll in deathroll.
+```{r 2.18}
+deathroll <- function(sides = 1000, sum = 1){
+  x_i <- sample(x = 1:sides, size = 1)
+  if (x_i == 1) {
+    sum
+  } else {
+    deathroll(x_i, sum + 1)
+  }
+}
+
+mean(replicate(10000, deathroll() == 4))
+barplot(table(replicate(10000, deathroll())))  # For my own curiosity
+```
+
+**2.19**\
+In the game of Scrabble, players make words using letter tiles. The data set `fosdata::scrabble` contains all 100 tiles.\
+Players begin the game by drawing seven tiles from a bag of 100 tiles. Estimate the probability that a player's first seven tiles contain no vowels.
+```{r 2.19}
+vowels <- c("A", "E", "I", "O", "U")
+
+mean(replicate(10000, {
+  !any(vowels %in% sample(x = fosdata::scrabble$piece, size = 7))
+}))
+```
+
+**2.20**\
+Two dice are rolled.
+
+a. What is the probability that the sum of the numbers is exactly 10?\
+Let $P(E)$ be the probability that the sum of two dice is exactly 10.\
+The sample space is all possible dice rolls with two dice.\
+$|S| = 36$\
+$E = \{(4,6),(5,5),(6,4)\}$\
+$|E| = 3$\
+$P(E) = \frac{|E|}{|S|} = \frac{3}{36} = \boxed{\frac{1}{12}}$
+
+b. What is the probability that the sum of the numbers is at least 10?\
+Let $P(E)$ be the probability that the sum of two dice is at least 10.\
+$E = \{(4,6),(5,5),(5,6),(6,4),(6,5),(6,6)\}$\
+$|E| = 6$\
+$P(E) = \frac{|E|}{|S|} = \frac{6}{36} = \boxed{\frac{1}{6}}$
+
+c. What is the probability that the sum of the numbers is exactly 10, given that it is at least 10?\
+Let $A$ be the event that the sum of numbers is exactly 10, and let $B$ be the event that the sum of numbers is at least 10.\
+$A \cap B = A = \{(4,6),(5,5),(6,4)\}$\
+$P(A \cap B) = \frac{1}{12}$\
+$P(B) = \frac{1}{6}$\
+$P(A|B) = \frac{P(A \cap B)}{P(B)} = \frac{1}{12} \cdot \frac{6}{1} = \boxed{\frac{1}{2}}$
+
+**2.21**\
+A hat contains 6 slips of paper with the numbers 1 through 6 written on them. Two slips of paper are drawn from the hat (without replacing), and the sum of the numbers is computed.
+
+a. What is the probability that the sum of the numbers is exactly 10?\
+Let $P(E)$ be the probability that the sum of the numbers is exactly 10.\
+$|S| = 30$, see **2.3**\
+$E = \{(4,6),(6,4)\}$\
+$|E| = 2$\
+$P(E) = \frac{|E|}{|S|} = \frac{2}{30} = \boxed{\frac{1}{15}}$
+
+b. What is the probability that the sum of the numbers is at least 10?\
+Let $P(E)$ be the probability that the sum of the numbers is at least 10.\
+$|S| = 30$\
+$E = \{(4,6),(6,4),(6,5)\}$\
+$|E| = 3$\
+$P(E) = \frac{|E|}{|S|} = \frac{3}{30} = \boxed{\frac{1}{10}}$
+
+c. What is the probability that the sum of the numbers is exactly 10, given that it is at least 10?\
+Let $A$ be the event that the sum of numbers is exactly 10, and let $B$ be the event that the sum of numbers is at least 10.\
+$A \cap B = A = \{(4,6),(6,4)\}$\
+$P(A \cap B) = \frac{1}{15}$\
+$P(B) = \frac{1}{10}$\
+$P(A|B) = \frac{P(A \cap B)}{P(B)} = \frac{1}{15} \cdot \frac{10}{1} = \frac{10}{15} = \boxed{\frac{2}{3}}$
+
+**2.22**\
+Roll two dice, one white and one red. Consider these events:
+
+- $A$: The sum is 7.
+- $B$: The white die is odd.
+- $C$: The red die has a larger number showing than white.
+- $D$: The dice matches (doubles).
+
+a. Which pair(s) of events are disjoint (events $A$ and $B$ are *disjoint* if $A \cap B = \emptyset$)?\
+Represent outcomes as (white, red).\
+$(3,4) \in A \cap B$, therefore $A$ and $B$ are not disjoint.\
+$(3,4) \in A \cap C$, therefore $A$ and $C$ are not disjoint.\
+$A \cap D = \emptyset$, therefore $A$ and $D$ **are** disjoint.\
+$(3,4) \in B \cap C$, therefore $B$ and $C$ are not disjoint.\
+$(3,3) \in B \cap D$, therefore $B$ and $D$ are not disjoint.\
+$C \cap D = \emptyset$, therefore $C$ and $D$ **are** disjoint.
+
+b. Which pair(s) are independent?\
+Pairs $A$ and $B$ are independent if $P(A \cap B)$ = $P(A)P(B)$.\
+Pairs that are disjoint cannot be independent, because $\emptyset$ cannot ever equal $P(A)P(B)$. This is true intuitively because knowledge that events are disjoint means that knowing one event occurred automatically disqualifies the other event from occurring, which means they are dependent.\
+$|S| = 36$\
+$A = \{(1,6),(6,1),(2,5),(5,2),(3,4),(4,3)\}$\
+$|A| = 6$\
+$B = \{(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(3,1),(3,2),(3,3),(3,4),(3,5),(3,6),(5,1),(5,2),(5,3),(5,4),(5,5),(5,6)\}$\
+$|B| = 18$\
+$P(A) = \frac{|A|}{|S|} = \frac{6}{36} = \frac{1}{6}$\
+$P(B) = \frac{|B|}{|S|} = \frac{18}{36} = \frac{1}{2}$\
+$A \cap B = \{(1,6),(3,4),(5,2)\}$\
+$|A \cap B| = 3$\
+$P(A \cap B) = \frac{|A \cap B|}{|S|} = \frac{3}{36} = \frac{1}{12}$\
+$P(A)P(B) = \frac{1}{6} \cdot \frac{1}{2} = \frac{1}{12} = P(A \cap B)$\
+Therefore, $A$ and $B$ **are** independent.\
+
+$C = \{(1,2),(1,3),(1,4),(1,5),(1,6),(2,3),(2,4),(2,5),(2,6),(3,4),(3,5),(3,6),(4,5),(4,6),(5,6)\}$\
+$|C| = 15$\
+$P(C) = \frac{|C|}{|S|} = \frac{15}{36} = \frac{5}{12}$\
+$A \cap C = \{(1,6),(2,5),(3,4)\}$\
+$|A \cap C| = 3$\
+$P(A \cap C) = \frac{|A \cap C|}{|S|} = \frac{3}{36} = \frac{1}{12}$\
+$P(A)P(C) = \frac{1}{6} \cdot \frac{5}{12} = \frac{5}{72} \neq P(A \cap C)$\
+Therefore, $A$ and $C$ are not independent.\
+
+$B \cap C = \{(1,2),(1,3),(1,4),(1,5),(1,6),(3,4),(3,5),(3,6),(5,6)\}$\
+$|B \cap C| = 9$\
+$P(B \cap C) = \frac{|B \cap C|}{|S|} = \frac{9}{36} = \frac{1}{4}$\
+$P(B)P(C) = \frac{1}{2} \cdot \frac{5}{12} = \frac{5}{24} \neq P(B \cap C)$\
+Therefore, $B$ and $C$ are not independent.\
+
+$D = \{(1,1),(2,2),(3,3),(4,4),(5,5),(6,6)\}$\
+$|D| = 6$\
+$P(D) = \frac{|D|}{|S|} = \frac{6}{36} = \frac{1}{6}$\
+$B \cap D = \{(1,1),(3,3),(5,5)\}$\
+$|B \cap D| = 3$\
+$P(B \cap D) = \frac{|B \cap D|}{|S|} = \frac{3}{36} = \frac{1}{12}$\
+$P(B)P(D) = \frac{1}{2} \cdot \frac{1}{6} = \frac{1}{12} = P(B \cap D)$\
+Therefore, $B$ and $D$ **are** independent.
+
+c. Which pairs are neither disjoint nor independent?\
+The pairs $A$ and $C$, and $B$ and $C$, are neither disjoint nor independent.
+
+**2.23**\
+Suppose you do an experiment where you select ten people at random and ask their birthdays.\
+Here are three events:
+
+- $A$: all ten people were born in February.
+- $B$: the first person was born in February.
+- $C$: the second person was born in January.
+
+a. Which pair(s) of these events are disjoint, if any?\
+Represent outcomes as length-10 lists where each element of the list represents the month a person was born (with 1 being January, 2 being February, etc.).\
+$A \subset B$ because all ten people being born in February requires the first person to be born in February. Therefore, $A \in A \cap B$, and $A$ and $B$ are not disjoint.\
+$A \cap C = \emptyset$, therefore $A$ and $C$ **are** disjoint.\
+$\forall(2,1,...) \in B \cap C$, therefore $B$ and $C$ are not disjoint.
+
+b. Which pair(s) of these events are independent, if any?\
+See the rational in **2.22** (b) for why $A$ and $C$ cannot be independent.\
+The sample space is all possible length-10 lists whose elements consist of the numbers 1-12, representing months in the year. By the multiplictaion principle, there are $12^{10}$ possible outcomes in the sample space. Therefore, $|S| = 12^{10}$.\
+$|A| = 1$ because there is only one possible outcome where every single person asked was born in February.\
+$P(A) = \frac{|A|}{|S|} = \frac{1}{12^{10}}$\
+$|B| = 12^{9}$ by the multiplication principle because the first person must be born in February, then the next nine people can be born in any month.\
+$P(B) = \frac{|B|}{|S|} = \frac{12^{9}}{12^{10}} = \frac{1}{12}$\
+$A = A \cap B, P(A) = P(A \cap B) = \frac{1}{12^{10}}$\
+$P(A)P(B) = \frac{1}{12^{10}} \cdot \frac{1}{12} = \frac{1}{12^{11}} \neq P(A \cap B)$\
+Therefore, $A$ and $B$ are not independent.
+
+$|C| = 12^{9}$ by the multiplication principle because the second person must be born in January, then the other nine people can be born in any month.\
+$P(C) = \frac{|C|}{|S|} = \frac{12^{9}}{12^{10}} = \frac{1}{12}$\
+$|B \cap C| = 12^{8}$ by the multiplication principle because the first two people are always the same, but the next eight can be any of the 12 months.\
+$P(B \cap C) = \frac{|B \cap C|}{|S|} = \frac{12^{8}}{12^{10}} = \frac{1}{12^2}$ \
+$P(B)(C) = \frac{1}{12} \cdot \frac{1}{12} = \frac{1}{12^2} = P(B \cap C)$\
+Therefore, $B$ and $C$ **are** independent.
+
+c. What is P(B|A)?\
+$P(B|A) = \frac{P(B \cap A)}{P(A)} = \frac{1}{12^{10}} \cdot \frac{12^{10}}{1} = \boxed{1}$.\
+Knowing that all ten people are born in February means that we know for sure the first person was born in February, whereas without that knowledge there is only a $\frac{1}{12}$ chance they are.
+
+**2.24**\
+Let $A$ and $B$ be events. Show that $P(A \cup B|B) = 1$.\
+$P(A \cup B|B) = \frac{P((A \cup B) \cap B)}{P(B)}$\
+$(A \cup B) \cap B = B$, so $\frac{P((A \cup B) \cap B)}{P(B)} = \frac{P(B)}{P(B)} = 1$\
+Alternatively $B \subset A \cup B$ so $P(B) \le P(A \cup B)$. Since $P(A \cup B|B)$ assumes $P(B) = 1$, then $P(A \cup B) = 1$. See Theorem 2.1
+
+**2.25**\
+In an experiment where you toss a fair coin twice, define events:
+
+- $A$: the first toss is heads.
+- $B$: the second toss is heads.
+- $C$: both tosses are the same.
+
+Show that $A$ and $B$ are independent.\
+$S = \{HH, HT, TH, TT\}$\
+$|S|$ = 4\
+$A = \{HH, HT\}$\
+$B = \{HH, TH\}$\
+$|A| = |B| = 2$\
+$P(A) = P(B) = \frac{2}{|S|} = \frac{2}{4} = \frac{1}{2}$\
+$A \cap B = \{HH\}$\
+$|A \cap B| = 1$\
+$P(A \cap B) = \frac{|A \cap B|}{|S|} = \frac{1}{4}$\
+$P(A)P(B) = \frac{1}{2} \cdot \frac{1}{2} = \frac{1}{4} = P(A \cap B)$\
+Therefore, $A$ and $B$ are independent.\
+
+Show that $A$ and $C$ are independent.\
+$C = \{HH, TT\}$\
+$|C| = 2$\
+$P(C) = \frac{|C|}{|S|} = \frac{2}{4} = \frac{1}{2}$\
+$A \cap C = \{HH\}$\
+$|A \cap C| = 1$\
+$P(A \cap C) = \frac{|A \cap C|}{|S|} = \frac{1}{4}$\
+$P(A)P(C) = \frac{1}{2} \cdot \frac{1}{2} = \frac{1}{4} = P(A \cap C)$\
+Therefore, $A$ and $C$ are independent.\
+
+Show that $B$ and $C$ are independent.\
+$B \cap C = \{HH\}$\
+$|B \cap C| = 1$\
+$P(B \cap C) = \frac{|B \cap C|}{|S|} = \frac{1}{4}$\
+$P(B)P(C) = \frac{1}{2} \cdot \frac{1}{2} = \frac{1}{4} = P(B \cap C)$\
+Therefore, $B$ and $C$ are independent.\
+
+Finally, show that $A$, $B$, and $C$ are **not** mutually independent.\
+Events $A_1,A_2,...,A_n \subset S$ are mutually independent if for any sub-collection $A_i,...,A_{i_k}$ we have $P(A_{i_1} \cap A_{i_2} \cap \dotsb \cap A_{i_k}) = P(A_{i_1}) \cdot P(A_{i_2}) \cdot \ldots \cdot P(A_{i_k})$. See Definition 2.24\
+$A \cap B \cap C = \{HH\}$\
+$|A \cap B \cap C| = 1$\
+$P(A \cap B \cap C) = \frac{|A \cap B \cap C|}{|S|} = \frac{1}{4}$\
+$P(A) \cdot P(B) \cdot P(C) = \frac{1}{2} \cdot \frac{1}{2} \cdot \frac{1}{2} = \frac{1}{8} \neq P(A \cap B \cap C)$\
+Therefore, $A$, $B$, and $C$ are **not** mutually independent. This makes sense, because for instance knowing both $A$ and $B$ guarantees $C$. Without this information, however, we would think the probability of $C$ is only $\frac{1}{2}$.
+
+**2.26**\
+Suppose a die is tossed three times. Let $A$ be the event "the first toss is a 5." Let $B$ be the event "the first toss is the largest number rolled" (the "largest" can be a tie). Determine, via simulation or otherwise, whether $A$ and $B$ are independent.\
+$|S| = 6^3 = 216$ by the multiplication principle.\
+$|A| = 6^2 = 36$ by the multiplication principle, as the first die roll must be a 5 but the second and third can be any of 6 options.\
+$P(A) = \frac{|A|}{|S|} = \frac{36}{216} = \frac{1}{6}$\
+$|B| = 6^2 + 5^2 + 4^2 + 3^2 + 2^2 + 1^2 = 36 + 25 + 16 + 9 + 4 + 1 = 91$. This is because if the first dice is a 6, then there are 36 potential outcomes that meet the event criteria, and if first dice is a 5, there are 25 potential, and so on until you get to 1 where the only outcome that works is (1,1,1).\
+$P(B) = \frac{|B|}{|S|} = \frac{91}{216}$\
+$|A \cap B| = 25$ because if the first toss must be a 5, then the next two tosses can be any number except 6, which results in 25 possible outcomes.\
+$P(A \cap B) = \frac{|A \cap B|}{|S|} = \frac{25}{216}$\
+$P(A)P(B) = \frac{1}{6} \cdot \frac{91}{216} = \frac{91}{1296} \neq P(A \cap B)$.\
+$P(A)P(B) \approx 0.070$\
+$P(A \cap B) \approx 0.116$\
+Therefore, $A$ and $B$ are **not** independent.\
+By simulation,
+```{r 2.26}
+p_a <- mean(replicate(10000, {
+  x <- sample(x = 1:6, size = 3, replace = TRUE)
+  x[1] == 5
+}))
+
+p_b <- mean(replicate(10000, {
+  x <- sample(x = 1:6, size = 3, replace = TRUE)
+  x[1] >= x[2] & x[1] >= x[3]
+}))
+
+p_anb <- mean(replicate(10000, {
+  x <- sample(x = 1:6, size = 3, replace = TRUE)
+  x[1] == 5 & x[1] >= x[2] & x[1] >= x[3]
+}))
+
+p_a * p_b
+p_anb
+```
+
+**2.27**\
+Suppose you have two coins that land with heads facing up with common probability $p$, where $0 < p < 1$. One coin is red and the other is white. You toss both coins. Find the probability that the red coin is heads, given that the red and white coin are different. Your answer will be in terms of $p$.\
+Let $A$ be the event that the red coin is heads. Let $B$ be the event that the red and white coin are different.\
+Represent outcomes with Red, White.\
+$S = \{HH, HT, TH, TT\}$\
+Probabilities of elements in $S$ are $(p^2, p(1-p), (1-p) \cdot p, (1-p)^2)$.\
+$A = \{HH, HT\}$\
+$B = \{HT, TH\}$\
+$P(B) = p(1-p) + p(1-p) = p - p^2 + p - p^2 = 2p - 2p^2 = 2p(1 - p)$\
+$A \cap B = \{HT\}$\
+$P(A \cap B) = p(1-p)$\
+$P(A|B) = \frac{P(A \cap B)}{P(B)} = \frac{p(1-p)}{2p(1-p)} = \boxed{\frac{1}{2}}$\
+
+**2.28**\
+Bob Ross was a painter with a PBS television show, "The Joy of Painting," that ran for 11 years.
+
+a. 91% of Bob's paintings contain a tree and 85% contain two or more trees. What is the probability that he painted a second tree, given that he painted a tree?\
+Let $A$ be the event that a painting contains a tree, and $B$ be the event that it contains a second tree.\
+$P(A) = 0.91$\
+$P(B \cap A) = P(B) = 0.85$\
+$P(B|A) = \frac{P(B \cap A)}{P(A)} = \frac{0.85}{0.91} \approx \boxed{0.93}$
+
+b. 18% of Bob's paintings contain a cabin. Given that he painted a cabin, there is a 35% chance the cabin is on a lake. What is the probability that a Bob Ross painting contains both a cabin and a lake?\
+Let $A$ be the event a painting contains a cabin, and $B$ be the event a painting contains a lake.\
+$P(A) = 0.18$\
+$P(B|A) = 0.35$\
+$P(A \cap B) = P(B \cap A) = P(B|A)P(A) = 0.35 \cdot 0.18 = \boxed{0.063}$
+
+**2.29**\
+Ultimate frisbee players don't own coins. So, team captains decide which team will play offense first by flipping frisbees before the start of the game. Rather than flip one frisbee and call a side, each team captain flips a frisbee and one captain calls whether the two frisbees will land on the same side, or on different sides. Presumably, they do this instead of just flipping one frisbee because a frisbee is not obviously a fair coin - the probability of one side seems likely to be different from the probability of the other side.
+
+a. Suppose you flip two fair coins. What is the probability they show different sides?\
+Let $P(E)$ be the probability they show different sides.
+$S = \{HH, HT, TH, TT\}$\
+$|S| = 4$\
+$E = \{HT, TH\}$
+$|E| = 2$\
+$P(E) = \frac{|E|}{|S|} = \frac{2}{4} = \boxed{\frac{1}{2}}$
+
+b. Suppose two captains flip frisbees. Assume the probability that a frisbee lands convex side up is $p$. Compute the probability (in terms of $p$) that the two frisbees match.\
+Represent convex as H, and concave as T. Then, $S$ is the same as in (a) except with the following probabilities $(p^2,p(1-p),(1-p)*p,(1-p)^2)$.\
+Let $P(E)$ be the probability the two frisbees match.
+$E = \{HH, TT\}$\
+Since the two outcomes in $E$ are pairwise disjoint, can use Axiom 3 from Definition 2.7, or additivity, to compute $P(E)$.\
+$P(E) = p^2 + (1-p)^2 = p^2 + 1 - 2p + p^2 = \boxed{2p^2 -2p + 1}$\
+This makes sense, because if $p$ was 0.50, then the probability is $2(0.5)^2 - 2(0.5) +1 = 2(0.25) -1 + 1 = 0.5$ which is what we would expect (same as $P(\overline{E})$ from (a)).
+
+c. Make a graph of the probability of a match in terms of p.
+```{r 2.29.c}
+pts <- seq(from = 0, to = 1, length.out = 100)
+plot(
+  x = pts,
+  y = (function(p){2*p^2 -2*p + 1})(pts),
+  type = "l",
+  xlab = "p",
+  ylab = "probability of a match"
+)
+```
+
+d. One Reddit user flipped a frisbee 800 times and found that in practice, the convex side lines up 45% of the time. When captains flip, what is the probability of "same"? What is the probability of "different"?\
+Let $P(A)$ be the probability of "same" and $P(B)$ be the probability of "different".\
+Assume $p$ = 0.45, then use answer from (b)\
+$P(A) = 2p^2 -2p + 1 = 2(0.45)^2 - 2(0.45) + 1 = 2(0.2025) - 0.9 + 1 = 0.405 + 0.1 = \boxed{0.505}$\
+$P(B)$ is the complement to $P(A)$, since if the frisbees aren't the same, they are different, and together that comprises the entire sample space, so $P(B) = 1 - P(A) = 1 - 0.505 = \boxed{0.495}$
+
+e. What advice would you give to an ultimate frisbee captain?\
+No matter the true value of $p$ (as estimated by a Reddit user or otherwise), it always makes sense to call "same" because the probability will always be greater than 0.5 (consult the graph in (c)).
+
+f. Is the two-frisbee flip better than a single-frisbee flip for deciding the offense?\
+If the true value of $p$ is around 45%, then a two-frisbee flip is better because the probability of a call being correct is closer to 50%. See (d), which shows that this would be 50.5% if calling same, whereas correctly calling a single-frisbee flip would be 55% if you pick the concave side.
+
+**2.30**\
+Suppose there is a new test that detects whether people have a disease. If a person has the disease, then the test correctly identifies that person as being sick 99.9% of the time (the *sensitivity* of the test). If a person does not have the disease, then the test correctly identifies the person as being well 97% of the time (the *specificity* of the test). Suppose that 2% of the population has the disease. Find the probability that a randomly selected person has the disease given that they test positive for the disease.\
+Let $P(A)$ be the probability a person has the disease and let $P(B)$ be the probability a person tests positive for the disease.\
+$P(A) = 0.02$\
+$P(\overline{A}) = 1 - P(A) = 1 - 0.02 = 0.98$
+$P(B|A) = 0.999$\
+$P(B|\overline{A}) = 0.03$\
+$P(A|B) = \frac{P(B|A)P(A)}{P(B)} = \frac{P(B|A)P(A)}{P(B|A)P(A) + P(B|\overline{A})P(\overline{A})} = \frac{0.999 \cdot 0.02}{0.999 \cdot 0.02 + 0.03 \cdot 0.98} = \frac{0.01998}{0.01998 + 0.0294} = \frac{0.01998}{0.04938} \approx \boxed{0.40}$
+
+**2.31**\
+Suppose that there are two boxes containing marbles.\
+Box 1 contains 3 red and 4 blue marbles. Box 2 contains 2 red and 5 blue marbles. A single die is tossed, and if the result is 1 or 2, then a marble is drawn from box 1. Otherwise a marble is drawn from box 2.
+
+a. What is the probability that the marble drawn is red?\
+Let $A$ be the event that a 1 or 2 is rolled, and $B$ be the event that a red marble is drawn. This means that $P(A)$ is the probability that a marble is drawn from Box 1, and $P(\overline{A})$ is the probability that a marble is drawn from Box 2. The answer will be $P(B)$.\
+$P(A) = \frac{2}{6} = \frac{1}{3}$ because the sample space is all possible rolls for a single dice, which has six options. Therefore, $P(\overline{A}) = 1 - P(A) = 1 - \frac{1}{3} = \frac{2}{3}$\
+$P(B|A)$ is the probability of drawing a red marble from Box 1, which is $\frac{3}{7}$. $P(B|\overline{A})$ is the probability of drawing a red marble from Box 2, which is $\frac{2}{7}$.\
+Applying the Law of Total Probability (see Theorem 2.4), $P(B) = P(B \cap A) + P(B) = P(B|A)P(A) + P(B|\overline{A})P(\overline{A}) = \frac{3}{7} \cdot \frac{1}{3} + \frac{2}{7} \cdot \frac{2}{3} = \frac{3}{21} + \frac{4}{21} = \frac{7}{21} = \boxed{\frac{1}{3}}$.
+
+b. What is the probability that the marble came from Box 1 given that the marble is red?\
+The probability that a marble is from Box 1 and is red by the multiplication principle is the probability of choosing from Box 1 multiplied by the probability of choosing a red marble from Box 2.\
+$P(A \cap B) = P(A) \cdot P(B|A) = \frac{1}{3} \cdot \frac{3}{7} = \frac{1}{7}$\
+$P(A|B) = \frac{P(A \cap B)}{P(B)} = \frac{1}{7} \cdot \frac{3}{1} = \boxed{\frac{3}{7}}$
+
+**2.32**\
+Suppose that you have 10 boxes, numbered 0-9. Box *i* contains *i* red marbles and $9 - i$ blue marbles. You perform the following experiment. Pick a box at random, draw a marble and record its color. Replace the marble back in the box, and draw another marble *from the same box* and record its color. Replace the marble back in the box, and draw another marble from the same box and record its color. So, all three marbles are drawn from the same box.\
+
+a. If you draw three consecutive red marbles, what is the probability that a fourth marble drawn from the same box will also be red?\
+Let $A$ be the event that the first three marbles are red, and let $B$ be the event that the fourth marble drawn is red.\
+Each of the boxes are pairwise disjoint, as you must draw a marble from the same box, so no event consists of multiple boxes. This means we can calculate $P(A)$ by computing $P(A) = \frac{1}{10}\sum_{i=0}^{9}P(A_i)$ where $A_i$ is the probability the first three marbles drawn from the $i$th box are red (see Definition 2.7). Since all 10 boxes have equal probability of being chosen, $\frac{1}{10}$ is drawn out of the summation. This is to reflect the fact that each $A_i$ is assuming the box has already been chosen, and each box has a $\frac{1}{10}$ chance to be selected.\
+Use the rule of product to calculate the probability that the first three marbles of red. Remember, **there is replacement**, so each computation is the cubed value of drawing a single red marble.\
+$P(A_0) = (\frac{0}{9})^3 = \frac{0}{729} = 0$\
+$P(A_1) = (\frac{1}{9})^3 = \frac{1}{729}$\
+$P(A_2) = (\frac{2}{9})^3 = \frac{8}{729}$\
+$P(A_3) = (\frac{3}{9})^3 = \frac{27}{729}$\
+$P(A_4) = (\frac{4}{9})^3 = \frac{64}{729}$\
+$P(A_5) = (\frac{5}{9})^3 = \frac{125}{729}$\
+$P(A_6) = (\frac{6}{9})^3 = \frac{216}{729}$\
+$P(A_7) = (\frac{7}{9})^3 = \frac{343}{729}$\
+$P(A_8) = (\frac{8}{9})^3 = \frac{512}{729}$\
+$P(A_9) = (\frac{9}{9})^3 = \frac{729}{729} = 1$\
+$P(A) = \frac{1}{10}\sum_{i=0}^{9}P(A_i) = \frac{1}{10}(P(A_0) + P(A_1) + P(A_2) + P(A_3) + P(A_4) + P(A_5) + P(A_6) + P(A_7) + P(A_8) + P(A_9)) = \frac{1}{10}(0 + \frac{1}{729} + \frac{8}{729} + \frac{27}{729} + \frac{64}{729} + \frac{125}{729} + \frac{216}{729} + \frac{343}{729} + \frac{512}{729} + 1) = \frac{1}{10}(\frac{1296}{729} + 1) = \frac{1}{10}(\frac{16}{9} + \frac{9}{9}) \frac{1}{10}(\frac{25}{9}) = \frac{25}{90} = \frac{5}{18}$\
+Now, $P(B \cap A) = P(B)$ because for the first four marbles to be red, the first three marbles also have to be red. The same process will be used to compute $P(B)$ as for $P(A)$.\
+$P(B) = \frac{1}{10}\sum_{i=0}^{9}P(B_i)$ where $B_i$ is the probability the first three marbles drawn from the $i$th box are red. Each computation is the value of drawing a single red marble quadrupled.\
+$P(A_0) = (\frac{0}{9})^4 = \frac{0}{6561} = 0$\
+$P(A_1) = (\frac{1}{9})^4 = \frac{1}{6561}$\
+$P(A_2) = (\frac{2}{9})^4 = \frac{16}{6561}$\
+$P(A_3) = (\frac{3}{9})^4 = \frac{81}{6561}$\
+$P(A_4) = (\frac{4}{9})^4 = \frac{256}{6561}$\
+$P(A_5) = (\frac{5}{9})^4 = \frac{625}{6561}$\
+$P(A_6) = (\frac{6}{9})^4 = \frac{1296}{6561}$\
+$P(A_7) = (\frac{7}{9})^4 = \frac{2401}{6561}$\
+$P(A_8) = (\frac{8}{9})^4 = \frac{4096}{6561}$\
+$P(A_9) = (\frac{9}{9})^4 = \frac{6561}{6561} = 1$\
+$P(B \cap A) = P(B) = \frac{1}{10}\sum_{i=0}^{9}P(B_i) = \frac{1}{10}(P(B_0) + P(B_1) + P(B_2) + P(B_3) + P(B_4) + P(B_5) + P(B_6) + P(B_7) + P(B_8) + P(B_9)) = \frac{1}{10}(0 + \frac{1}{6561} + \frac{16}{6561} + \frac{81}{6561}+ \frac{256}{6561} + \frac{625}{6561} + \frac{1296}{6561} + \frac{2401}{6561} + \frac{4096}{6561} + 1) = \frac{1}{10}(\frac{8772}{6561} + 1) = \frac{1}{10}(\frac{2924}{2187} + \frac{2187}{2187}) = \frac{1}{10}(\frac{5111}{2187}) = \frac{5111}{21870}$\
+$P(B|A) = \frac{P(B \cap A)}{P(A)} = \frac{5111}{21870} \cdot \frac{18}{5} = \frac{5111}{1215} \cdot \frac{1}{5} = \frac{5111}{6075} \approx \boxed{0.84}$
+
+b. If you draw three consecutive red marbles, what is the probability that you chose Box 9?\
+The event $A$ is the same as in (a), but now let the event $B$ represent the probability that you choose Box 9.\
+From (a), $P(A) = \frac{5}{18}$.\
+$B \cap A$ is the event you choose Box 9 and draw three consecutive red marbles. Use the rule of product to calculate $P(B \cap A)$ by multiplying the probability you choose Box 9 ($P(B) = \frac{1}{10}$, as you choose 1 box ($|B|$) at random from 10 boxes ($|S|$)) by the probability of drawing three consecutive red marbles in Box 9 (which is $P(A_9) = 1$ from (a)).\
+$P(B \cap A) = \frac{1}{10} \cdot 1 = \frac{1}{10}$\
+$P(B|A) = \frac{B \cap A}{P(A)} = \frac{1}{10} \cdot \frac{18}{5} = \frac{18}{50} = \boxed{\frac{9}{25}}$
+
+**2.33**\
+How many ways are there of getting 4 heads when tossing 10 coins?\
+Let $E$ be the event of getting 4 heads when tossing 10 coins.\
+$|E| = {10 \choose 4} = \frac{10!}{4!(10-4)!} = \frac{10!}{4!6!} = \frac{10 \cdot 9 \cdot 8 \cdot 7 \cdot 6!}{4 \cdot 3 \cdot 2 \cdot 1 \cdot 6!} = \frac{10 \cdot 3 \cdot 7}{1} = \boxed{210}$
+```{r 2.33}
+choose(10, 4)
+```
+
+**2.34**\
+How many ways are there of getting 4 heads when tossing 10 coins, assuming that the 4th head came on the 10th toss?\
+Let $E$ be the event of getting 4 heads when tossing 10 coins, and the 4th head came on the 10th toss.\
+This is the same as getting 3 heads when tossing 9 coins.\
+$|E| = {9 \choose 3} = \frac{9!}{3!(9-3)!} = \frac{9!}{3!6!} = \frac{9 \cdot 8 \cdot 7 \cdot 6!}{3 \cdot 2 \cdot 1 \cdot 6!} = \frac{3 \cdot 4 \cdot 7}{1} = \boxed{84}$
+```{r 2.34}
+choose(9, 3)
+```
+
+**2.35**\
+Six standard six-sided dice are rolled.\
+
+a. How many outcomes are there?\
+By the multiplictaion principle, each dice has 6 possible values, so the number of outcomes is the product of every dice.\
+$|S| = 6^6 = \boxed{46,656}$
+
+b. How many outcomes are there such that all of the dice are different numbers?\
+Let $P(E)$ be the probability that you obtain six different numbers when you roll six dice.\
+Use the rule of product to find $|E|$. To form an outcome that meets the criteria of event $E$, there are six possibilities for the first die, then five for the second die (can't have any repeats), then four for the third, and so on.\
+$|E| = 6 \cdot 5 \cdot 4 \cdot 3 \cdot 2 \cdot 1 = 6! = \boxed{720}$\
+
+
+c. What is the probability that you obtain six different numbers when you roll six dice?\
+$P(E) = \frac{|E|}{|S|} = \frac{720}{46,656} = \boxed{\frac{5}{324}}$
+
+**2.36**\
+A box contains 5 red marbles and 5 blue marbles. Six marbles are drawn without replacement.
+
+a. How many ways are there of drawing the 6 marbles? Assume that getting all 5 red marbles and the first blue marble is different than getting all 5 red marbles and the second blue marble, for example.\
+Let $S$ be the sample space that you draw 6 marbles from a box of 10.
+This is the same as how many ways are there of drawing 6 marbles without replacement from a box of 10. 
+$|S| = {10 \choose 6} = \frac{10!}{6!(10-6)!} = \frac{10!}{6!4!} = \frac{10 \cdot 9 \cdot 8 \cdot 7 \cdot 6!}{6! \cdot 4 \cdot 3 \cdot 2 \cdot 1} = \frac{10 \cdot 3 \cdot 7}{1} = \boxed{210}$
+
+b. How many ways are there of drawing 4 red marbles and 2 blue marbles?\
+Let $E$ be the event you draw 4 red marbles and 2 blue marbles. It can be broken down into two tasks, drawing 4 red marbles (from 5 total), and drawing 2 blue marbles (from 5 total). By the multiplication principle, $|E| = {5 \choose 4} \cdot {5 \choose 2} = \frac{5!}{4!(5-4)!} \cdot \frac{5!}{2!(5-2)!} = \frac{5!}{4!1!} \cdot \frac{5!}{2!3!} = \frac{5 \cdot 4!}{4! \cdot 1} \cdot \frac{5 \cdot 4 \cdot 3!}{2 \cdot 1 \cdot 3!} = 5 \cdot 10 = \boxed{50}$\
+```{r 2.36.b}
+choose(5, 4) * choose(5, 2)
+```
+
+c. What is the probability of drawing 4 red marbles and 2 blue marbles?\
+$P(E) = \frac{|E|}{|S|} = \frac{50}{210} = \boxed{\frac{5}{21}}$
+
+
+
+
